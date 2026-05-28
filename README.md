@@ -56,7 +56,7 @@ Now that it is on the internet, your friends can install it like a real app!
 
 N3k0sint
 
-Cybersecurity student | Osint ReseaAnalyst | CTI & Digital Forensics Enthusiast
+Cybersecurity student | Osint Analyst | CTI & Digital Forensics Enthusiast
 
 
 ## 📄 License
