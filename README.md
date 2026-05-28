@@ -1,6 +1,6 @@
 # AegisDome
 
-**AegisDome** is an advanced Threat Intelligence Scanner and Secure Dashboard built to protect users from modern cyber threats, including zero-day phishing, malware, and sophisticated exploits. 
+**AegisDome** is a Threat Intelligence Scanner and Secure Dashboard built to protect users from modern cyber threats, including zero-day phishing, malware, and sophisticated exploits. 
 
 Powered by the global intelligence network of VirusTotal (aggregating over 90+ security vendors), AegisDome provides real-time, actionable insights on suspicious targets.
 
@@ -21,7 +21,6 @@ Powered by the global intelligence network of VirusTotal (aggregating over 90+ s
 
 ## 🚀 How to Share & Run on Any Device
 
-Because AegisDome is an advanced Full-Stack application (it has a Node.js backend and a SQLite database), it cannot be compiled directly into a simple `.exe` or mobile `.apk`. However, you can easily share it using the standard methods below!
 
 ### Option 1: For Windows Desktop (Local Run)
 If you want to share the code with a friend who has a Windows PC, they can run it locally with one click:
@@ -52,3 +51,18 @@ Now that it is on the internet, your friends can install it like a real app!
 
 - **Malware Sandbox Integration:** Future support for hooking into Cuckoo Sandbox or ANY.RUN for dynamic behavioral analysis of uploaded binaries.
 - **Team Workspaces:** User authentication and RBAC to share scan history across SOC teams.
+
+### *👤Creator*
+
+N3k0sint
+
+Cybersecurity student | Osint ReseaAnalyst | CTI & Digital Forensics Enthusiast
+
+
+## 📄 License
+
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+
+This project is licensed under the **GNU General Public License v3.0 (GPLv3)**.
+
+You are free to use, study, and modify this code for educational purposes. However, if you distribute any modifications, they must also be open-source under the same license.
