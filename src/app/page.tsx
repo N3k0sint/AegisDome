@@ -186,65 +186,69 @@ export default function Home() {
     try {
       if (!result) return;
 
-      // Dynamically import pdfmake (generates true vector PDFs from data instead of taking screenshots)
-      // @ts-ignore
-      const pdfMakeModule = await import('pdfmake/build/pdfmake.js');
-      // @ts-ignore
-      const pdfFontsModule = await import('pdfmake/build/vfs_fonts.js');
+      const [jsPDFModule, autoTableModule] = await Promise.all([
+        import('jspdf'),
+        import('jspdf-autotable')
+      ]);
       
-      const pdfMake = pdfMakeModule.default || pdfMakeModule;
-      const pdfFonts = pdfFontsModule.default || pdfFontsModule;
+      const jsPDF = jsPDFModule.jsPDF;
+      const autoTable = autoTableModule.default || (autoTableModule as any).autoTable;
+      const doc = new jsPDF();
       
-      // Initialize fonts safely covering all bundler output wraps (esm, cjs, webpack, turbopack)
-      let resolvedVfs = pdfFonts;
-      if (pdfFonts && (pdfFonts as any).pdfMake && (pdfFonts as any).pdfMake.vfs) {
-         resolvedVfs = (pdfFonts as any).pdfMake.vfs;
-      } else if (pdfFonts && (pdfFonts as any).vfs) {
-         resolvedVfs = (pdfFonts as any).vfs;
+      // Page 1 Header
+      doc.setFont('Helvetica', 'bold');
+      doc.setFontSize(22);
+      doc.setTextColor('#0f172a'); // slate-900
+      doc.text('AegisDome Intelligence Report', 14, 20);
+      
+      doc.setFont('Helvetica', 'normal');
+      doc.setFontSize(9);
+      doc.setTextColor('#64748b'); // slate-500
+      doc.text(`Generated: ${new Date().toUTCString()}`, 14, 26);
+      
+      doc.setDrawColor('#cbd5e1'); // slate-300
+      doc.line(14, 29, 196, 29);
+      
+      let currentY = 38;
+      
+      // Meta Information
+      doc.setFont('Helvetica', 'bold');
+      doc.setFontSize(10);
+      doc.setTextColor('#1e293b'); // slate-800
+      doc.text('Target:', 14, currentY);
+      doc.setFont('Helvetica', 'normal');
+      doc.text(result.details?.meaningful_name || url || 'Unknown Target', 35, currentY);
+      
+      currentY += 6;
+      doc.setFont('Helvetica', 'bold');
+      doc.text('Status:', 14, currentY);
+      if (result.status === 'safe') {
+         doc.setTextColor('#22c55e'); // green-500
+      } else {
+         doc.setTextColor('#ef4444'); // red-500
       }
-      (pdfMake as any).vfs = resolvedVfs;
-
-      const vendorsArray = result.vendors ? Object.entries(result.vendors) : [];
+      doc.text(result.status.toUpperCase(), 35, currentY);
       
-      const vendorTableBody = [
-        [{ text: 'Security Vendor', style: 'tableHeader' }, { text: 'Detection Result', style: 'tableHeader' }, { text: 'Category', style: 'tableHeader' }]
-      ];
+      currentY += 6;
+      doc.setFont('Helvetica', 'bold');
+      doc.setTextColor('#1e293b');
+      doc.text('Score:', 14, currentY);
+      doc.setFont('Helvetica', 'normal');
+      doc.text(`${result.stats?.malicious || 0} / ${result.stats?.total || 0} detections`, 35, currentY);
       
-      vendorsArray.forEach(([vendorName, details]: any) => {
-         vendorTableBody.push([
-           vendorName, 
-           details.result || 'Clean', 
-           details.category
-         ]);
-      });
-
-      const docDefinition: any = {
-        info: {
-          title: `AegisDome Intelligence Report - ${result.details?.meaningful_name || url || 'Target'}`,
-          author: 'AegisDome Threat Intelligence',
-        },
-        content: [
-          { text: 'AegisDome Intelligence Report', style: 'header' },
-          { text: `Target: ${result.details?.meaningful_name || url || 'Unknown Target'}`, style: 'subheader' },
-          { text: `Analysis Status: ${result.status.toUpperCase()}`, style: result.status === 'safe' ? 'safeText' : 'dangerText' },
-          { text: `Detection Score: ${result.stats?.malicious || 0} / ${result.stats?.total || 0}`, margin: [0, 0, 0, 20] },
-        ],
-        styles: {
-          header: { fontSize: 24, bold: true, margin: [0, 0, 0, 8] },
-          subheader: { fontSize: 14, margin: [0, 0, 0, 8] },
-          sectionHeader: { fontSize: 16, bold: true, margin: [0, 20, 0, 10], color: '#333333' },
-          dangerText: { fontSize: 14, bold: true, color: '#ef4444', margin: [0, 0, 0, 5] },
-          safeText: { fontSize: 14, bold: true, color: '#22c55e', margin: [0, 0, 0, 5] },
-          tableHeader: { bold: true, fontSize: 12, color: 'black', fillColor: '#f3f4f6' }
-        },
-        defaultStyle: {
-          font: 'Roboto'
-        }
-      };
-
-      // Add Details Section
+      currentY += 12;
+      
+      // Basic Properties
       if (result.details) {
-         docDefinition.content.push({ text: 'Target Properties & Hashes', style: 'sectionHeader' });
+         doc.setFont('Helvetica', 'bold');
+         doc.setFontSize(13);
+         doc.setTextColor('#0f172a');
+         doc.text('Target Properties & Hashes', 14, currentY);
+         
+         currentY += 6;
+         doc.setFont('Helvetica', 'normal');
+         doc.setFontSize(9);
+         doc.setTextColor('#334155'); // slate-700
          
          const detailsList = [];
          if (result.details.md5) detailsList.push(`MD5: ${result.details.md5}`);
@@ -253,66 +257,115 @@ export default function Home() {
          if (result.details.size) detailsList.push(`File Size: ${result.details.size} bytes`);
          if (result.details.type_description) detailsList.push(`File Type: ${result.details.type_description}`);
          
-         if (detailsList.length > 0) {
-            docDefinition.content.push({ ul: detailsList, margin: [0, 0, 0, 15] });
-         }
+         detailsList.forEach(line => {
+            doc.text(line, 14, currentY);
+            currentY += 5;
+         });
+         currentY += 6;
       }
-
-      // Add History Section
+      
+      // History Section
       if (result.details?.first_seen_itw_date || result.details?.first_submission_date) {
-         docDefinition.content.push({ text: 'History', style: 'sectionHeader' });
+         doc.setFont('Helvetica', 'bold');
+         doc.setFontSize(13);
+         doc.setTextColor('#0f172a');
+         doc.text('History', 14, currentY);
+         
+         currentY += 6;
+         doc.setFont('Helvetica', 'normal');
+         doc.setFontSize(9);
+         doc.setTextColor('#334155');
+         
          const historyList = [];
          if (result.details.first_seen_itw_date) historyList.push(`First Seen In The Wild: ${new Date(result.details.first_seen_itw_date * 1000).toUTCString()}`);
          if (result.details.first_submission_date) historyList.push(`First Submission: ${new Date(result.details.first_submission_date * 1000).toUTCString()}`);
          if (result.details.last_submission_date) historyList.push(`Last Submission: ${new Date(result.details.last_submission_date * 1000).toUTCString()}`);
          if (result.details.last_analysis_date) historyList.push(`Last Analysis: ${new Date(result.details.last_analysis_date * 1000).toUTCString()}`);
          
-         if (historyList.length > 0) {
-            docDefinition.content.push({ ul: historyList, margin: [0, 0, 0, 15] });
-         }
+         historyList.forEach(line => {
+            doc.text(line, 14, currentY);
+            currentY += 5;
+         });
+         currentY += 6;
       }
 
-      // Add Names Section
+      // Known Names
       if (result.details?.names && result.details.names.length > 0) {
-         docDefinition.content.push({ text: 'Known Names', style: 'sectionHeader' });
-         docDefinition.content.push({ ul: result.details.names, margin: [0, 0, 0, 15] });
+         doc.setFont('Helvetica', 'bold');
+         doc.setFontSize(13);
+         doc.setTextColor('#0f172a');
+         doc.text('Known Names', 14, currentY);
+         
+         currentY += 6;
+         doc.setFont('Helvetica', 'normal');
+         doc.setFontSize(9);
+         doc.setTextColor('#334155');
+         
+         result.details.names.forEach((name: string) => {
+            if (currentY > 280) {
+               doc.addPage();
+               currentY = 20;
+            }
+            doc.text(`• ${name}`, 14, currentY);
+            currentY += 5;
+         });
+         currentY += 6;
       }
-
-      // Add Community Insight Section
+      
+      // Community Insight
       if (result.details?.votes) {
-         docDefinition.content.push({ text: 'Community Insight', style: 'sectionHeader' });
-         docDefinition.content.push({
-           table: {
-             headerRows: 1,
-             widths: ['*', '*'],
-             body: [
-               [{ text: 'Harmless Votes', style: 'tableHeader' }, { text: 'Malicious Votes', style: 'tableHeader' }],
-               [
-                 { text: (result.details.votes.harmless || 0).toString(), fontSize: 16, color: '#22c55e', bold: true }, 
-                 { text: (result.details.votes.malicious || 0).toString(), fontSize: 16, color: '#ef4444', bold: true }
-               ]
-             ]
-           },
-           layout: 'lightHorizontalLines',
-           margin: [0, 0, 0, 15]
-         });
+         if (currentY > 260) {
+            doc.addPage();
+            currentY = 20;
+         }
+         doc.setFont('Helvetica', 'bold');
+         doc.setFontSize(13);
+         doc.setTextColor('#0f172a');
+         doc.text('Community Insight', 14, currentY);
+         
+         currentY += 6;
+         doc.setFont('Helvetica', 'normal');
+         doc.setFontSize(9);
+         doc.setTextColor('#334155');
+         doc.text(`Harmless Votes: ${result.details.votes.harmless || 0}`, 14, currentY);
+         doc.text(`Malicious Votes: ${result.details.votes.malicious || 0}`, 80, currentY);
+         
+         currentY += 10;
       }
-
-      // Add Vendors Section
+      
+      // Security Vendors Table
+      const vendorsArray = result.vendors ? Object.entries(result.vendors) : [];
       if (vendorsArray.length > 0) {
-         docDefinition.content.push({ text: 'Security Vendor Detections', style: 'sectionHeader' });
-         docDefinition.content.push({
-           table: {
-             headerRows: 1,
-             widths: ['*', '*', 'auto'],
-             body: vendorTableBody
-           },
-           layout: 'lightHorizontalLines'
+         if (currentY > 250) {
+            doc.addPage();
+            currentY = 20;
+         }
+         doc.setFont('Helvetica', 'bold');
+         doc.setFontSize(13);
+         doc.setTextColor('#0f172a');
+         doc.text('Security Vendor Detections', 14, currentY);
+         
+         currentY += 4;
+         
+         const tableBody = vendorsArray.map(([vendorName, details]: any) => [
+            vendorName,
+            details.result || 'Clean',
+            details.category
+         ]);
+         
+         autoTable(doc, {
+            startY: currentY,
+            head: [['Security Vendor', 'Detection Result', 'Category']],
+            body: tableBody,
+            theme: 'striped',
+            headStyles: { fillColor: '#0f172a', textColor: '#ffffff', fontStyle: 'bold' },
+            styles: { fontSize: 8, cellPadding: 2 },
+            margin: { left: 14, right: 14 }
          });
       }
-
-      // Generate and trigger clean download via Blob to bypass mobile pop-up blockers
-      const blob = await pdfMake.createPdf(docDefinition).getBlob();
+      
+      // Direct, silent file download
+      const blob = doc.output('blob');
       const blobUrl = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = blobUrl;
@@ -321,11 +374,10 @@ export default function Home() {
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(blobUrl);
-
+      
     } catch (err: any) {
       console.error(err);
-      alert(`PDF Engine Error: ${err.message}. Falling back to native print...`);
-      window.print();
+      alert(`PDF Generation Error: ${err.message}. Please try again.`);
     }
   };
 
