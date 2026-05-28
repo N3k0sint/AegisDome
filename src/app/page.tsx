@@ -305,8 +305,16 @@ export default function Home() {
          });
       }
 
-      // Generate and trigger download
-      pdfMake.createPdf(docDefinition).download(`AegisDome_Report_${result.targetId || 'scan'}.pdf`);
+      // Generate and trigger clean download via Blob to bypass mobile pop-up blockers
+      const blob = await pdfMake.createPdf(docDefinition).getBlob();
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = `AegisDome_Report_${result.targetId || 'scan'}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(blobUrl);
 
     } catch (err: any) {
       console.error(err);
