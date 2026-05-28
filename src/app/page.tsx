@@ -195,8 +195,14 @@ export default function Home() {
       const pdfMake = pdfMakeModule.default || pdfMakeModule;
       const pdfFonts = pdfFontsModule.default || pdfFontsModule;
       
-      // Initialize fonts
-      (pdfMake as any).vfs = (pdfFonts as any).pdfMake ? (pdfFonts as any).pdfMake.vfs : (pdfFonts as any).vfs;
+      // Initialize fonts safely covering all bundler output wraps (esm, cjs, webpack, turbopack)
+      let resolvedVfs = pdfFonts;
+      if (pdfFonts && (pdfFonts as any).pdfMake && (pdfFonts as any).pdfMake.vfs) {
+         resolvedVfs = (pdfFonts as any).pdfMake.vfs;
+      } else if (pdfFonts && (pdfFonts as any).vfs) {
+         resolvedVfs = (pdfFonts as any).vfs;
+      }
+      (pdfMake as any).vfs = resolvedVfs;
 
       const vendorsArray = result.vendors ? Object.entries(result.vendors) : [];
       
