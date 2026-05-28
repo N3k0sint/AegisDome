@@ -183,21 +183,134 @@ export default function Home() {
   }
 
   const downloadPdf = async () => {
-    const element = document.getElementById('report-content');
-    if (!element) return;
+    try {
+      if (!result) return;
 
-    // Dynamically import html2pdf to prevent Next.js Server-Side Rendering (SSR) crashes
-    const html2pdf = (await import('html2pdf.js')).default;
+      // Dynamically import pdfmake (generates true vector PDFs from data instead of taking screenshots)
+      const pdfMakeModule = await import('pdfmake/build/pdfmake');
+      const pdfFontsModule = await import('pdfmake/build/vfs_fonts');
+      
+      const pdfMake = pdfMakeModule.default || pdfMakeModule;
+      const pdfFonts = pdfFontsModule.default || pdfFontsModule;
+      
+      // Initialize fonts
+      pdfMake.vfs = pdfFonts.pdfMake ? pdfFonts.pdfMake.vfs : pdfFonts.vfs;
 
-    const opt: any = {
-      margin:       10,
-      filename:     `AegisDome_Report.pdf`,
-      image:        { type: 'jpeg', quality: 0.98 },
-      html2canvas:  { scale: 2, useCORS: true, backgroundColor: '#0f172a' }, // Force dark background for canvas so white text is visible
-      jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
-    };
+      const vendorsArray = result.vendors ? Object.entries(result.vendors) : [];
+      
+      const vendorTableBody = [
+        [{ text: 'Security Vendor', style: 'tableHeader' }, { text: 'Detection Result', style: 'tableHeader' }, { text: 'Category', style: 'tableHeader' }]
+      ];
+      
+      vendorsArray.forEach(([vendorName, details]: any) => {
+         vendorTableBody.push([
+           vendorName, 
+           details.result || 'Clean', 
+           details.category
+         ]);
+      });
 
-    html2pdf().set(opt).from(element).save();
+      const docDefinition: any = {
+        info: {
+          title: `AegisDome Intelligence Report - ${result.details?.meaningful_name || url || 'Target'}`,
+          author: 'AegisDome Threat Intelligence',
+        },
+        content: [
+          { text: 'AegisDome Intelligence Report', style: 'header' },
+          { text: `Target: ${result.details?.meaningful_name || url || 'Unknown Target'}`, style: 'subheader' },
+          { text: `Analysis Status: ${result.status.toUpperCase()}`, style: result.status === 'safe' ? 'safeText' : 'dangerText' },
+          { text: `Detection Score: ${result.stats?.malicious || 0} / ${result.stats?.total || 0}`, margin: [0, 0, 0, 20] },
+        ],
+        styles: {
+          header: { fontSize: 24, bold: true, margin: [0, 0, 0, 8] },
+          subheader: { fontSize: 14, margin: [0, 0, 0, 8] },
+          sectionHeader: { fontSize: 16, bold: true, margin: [0, 20, 0, 10], color: '#333333' },
+          dangerText: { fontSize: 14, bold: true, color: '#ef4444', margin: [0, 0, 0, 5] },
+          safeText: { fontSize: 14, bold: true, color: '#22c55e', margin: [0, 0, 0, 5] },
+          tableHeader: { bold: true, fontSize: 12, color: 'black', fillColor: '#f3f4f6' }
+        },
+        defaultStyle: {
+          font: 'Roboto'
+        }
+      };
+
+      // Add Details Section
+      if (result.details) {
+         docDefinition.content.push({ text: 'Target Properties & Hashes', style: 'sectionHeader' });
+         
+         const detailsList = [];
+         if (result.details.md5) detailsList.push(`MD5: ${result.details.md5}`);
+         if (result.details.sha1) detailsList.push(`SHA-1: ${result.details.sha1}`);
+         if (result.details.sha256) detailsList.push(`SHA-256: ${result.details.sha256}`);
+         if (result.details.size) detailsList.push(`File Size: ${result.details.size} bytes`);
+         if (result.details.type_description) detailsList.push(`File Type: ${result.details.type_description}`);
+         
+         if (detailsList.length > 0) {
+            docDefinition.content.push({ ul: detailsList, margin: [0, 0, 0, 15] });
+         }
+      }
+
+      // Add History Section
+      if (result.details?.first_seen_itw_date || result.details?.first_submission_date) {
+         docDefinition.content.push({ text: 'History', style: 'sectionHeader' });
+         const historyList = [];
+         if (result.details.first_seen_itw_date) historyList.push(`First Seen In The Wild: ${new Date(result.details.first_seen_itw_date * 1000).toUTCString()}`);
+         if (result.details.first_submission_date) historyList.push(`First Submission: ${new Date(result.details.first_submission_date * 1000).toUTCString()}`);
+         if (result.details.last_submission_date) historyList.push(`Last Submission: ${new Date(result.details.last_submission_date * 1000).toUTCString()}`);
+         if (result.details.last_analysis_date) historyList.push(`Last Analysis: ${new Date(result.details.last_analysis_date * 1000).toUTCString()}`);
+         
+         if (historyList.length > 0) {
+            docDefinition.content.push({ ul: historyList, margin: [0, 0, 0, 15] });
+         }
+      }
+
+      // Add Names Section
+      if (result.details?.names && result.details.names.length > 0) {
+         docDefinition.content.push({ text: 'Known Names', style: 'sectionHeader' });
+         docDefinition.content.push({ ul: result.details.names, margin: [0, 0, 0, 15] });
+      }
+
+      // Add Community Insight Section
+      if (result.details?.votes) {
+         docDefinition.content.push({ text: 'Community Insight', style: 'sectionHeader' });
+         docDefinition.content.push({
+           table: {
+             headerRows: 1,
+             widths: ['*', '*'],
+             body: [
+               [{ text: 'Harmless Votes', style: 'tableHeader' }, { text: 'Malicious Votes', style: 'tableHeader' }],
+               [
+                 { text: (result.details.votes.harmless || 0).toString(), fontSize: 16, color: '#22c55e', bold: true }, 
+                 { text: (result.details.votes.malicious || 0).toString(), fontSize: 16, color: '#ef4444', bold: true }
+               ]
+             ]
+           },
+           layout: 'lightHorizontalLines',
+           margin: [0, 0, 0, 15]
+         });
+      }
+
+      // Add Vendors Section
+      if (vendorsArray.length > 0) {
+         docDefinition.content.push({ text: 'Security Vendor Detections', style: 'sectionHeader' });
+         docDefinition.content.push({
+           table: {
+             headerRows: 1,
+             widths: ['*', '*', 'auto'],
+             body: vendorTableBody
+           },
+           layout: 'lightHorizontalLines'
+         });
+      }
+
+      // Generate and trigger download
+      pdfMake.createPdf(docDefinition).download(`AegisDome_Report_${result.targetId || 'scan'}.pdf`);
+
+    } catch (err: any) {
+      console.error(err);
+      alert(`PDF Engine Error: ${err.message}. Falling back to native print...`);
+      window.print();
+    }
   };
 
   const handleRedirectClick = () => {
