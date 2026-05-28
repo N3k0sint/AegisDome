@@ -45,6 +45,45 @@ Now that it is on the internet, your friends can install it like a real app!
 3. Select **"Add to Home Screen"**.
 4. AegisDome will be installed on their phone as a full-screen **Progressive Web App (PWA)**!
 
+### Option 3: Package & Send App Files Directly (APK, EXE, APP)
+If you want to package the app into a standalone file (e.g., an `.apk` for Android or a `.exe` for Windows) and share it directly with others (via WhatsApp, Telegram, USB, etc.), follow these packaging methods on **Kali Linux**:
+
+#### A. Package for Desktop (Windows/macOS/Linux)
+Using **Nativefier**, you can wrap the deployed Vercel web application into a native desktop launcher:
+* **To build for Windows (`.exe`):**
+  ```bash
+  npx nativefier -p windows --name "AegisDome" --icon public/icon-512.png "https://your-vercel-link.vercel.app"
+  ```
+* **To build for Linux (Binary):**
+  ```bash
+  npx nativefier -p linux --name "AegisDome" --icon public/icon-512.png "https://your-vercel-link.vercel.app"
+  ```
+* **To build for macOS (`.app`):**
+  ```bash
+  npx nativefier -p osx --name "AegisDome" --icon public/icon-512.png "https://your-vercel-link.vercel.app"
+  ```
+*Zip the resulting build directory and send it directly to your friends!*
+
+#### B. Package for Android (`.apk`)
+To generate a native Android installer file that users can tap to install:
+1. Install Capacitor:
+   ```bash
+   npm install @capacitor/core @capacitor/cli @capacitor/android
+   npx cap init AegisDome com.aegisdome.app --web-dir=out
+   npx cap add android
+   ```
+2. Export your Next.js project and sync with the Android container:
+   ```bash
+   npm run build
+   npx cap sync
+   ```
+3. Compile the `.apk` file using Android Studio or CLI:
+   ```bash
+   npx cap open android
+   ```
+   In Android Studio, click **Build > Build Bundle(s) / APK(s) > Build APK(s)**. 
+   *Send the compiled `.apk` file directly to any Android device to install it!*
+
 > **Note on Free Deployments:** Because free cloud services are "serverless", the local SQLite database cache will occasionally reset. This is perfectly normal and does not break the app; it just means it will fetch fresh data from VirusTotal.
 
 ## Future Roadmap
