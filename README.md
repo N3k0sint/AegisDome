@@ -11,11 +11,11 @@ Powered by the global intelligence network of VirusTotal (aggregating over 90+ s
 - **Scam Radar:** Paste entire suspicious emails or raw text logs. AegisDome will automatically parse, extract, and deduplicate all hidden URLs, IPs, and hashes for 1-click scanning.
 - **Intelligent Redirects & Warning Modals:** Clean URLs immediately redirect, while malicious URLs are hard-blocked by an un-bypassable warning modal showing exact threat intel.
 - **Local SQLite Caching:** Implements a 24-hour persistent database layer (`better-sqlite3`) to instantly load previously scanned items without burning VirusTotal API credits.
-- **Native PDF Reports:** Fully responsive, single-page UI architecture hooks directly into the browser's native print engine to generate fully selectable, un-clipped PDF threat reports.
+- **High-Fidelity PDF Reports:** Generates vector-based PDF reports directly on any desktop or mobile device using `jsPDF` and `jspdf-autotable`. All content and tables are perfectly structured, automatically paginated, and fully copy-pasteable.
 
 ## Tech Stack
 
-- **Frontend:** Next.js 15 (React), Tailwind CSS v4, Lucide Icons
+- **Frontend:** Next.js 16 (React 19), Tailwind CSS v4, Lucide Icons
 - **Backend:** Next.js API Routes (Serverless)
 - **Integrations:** VirusTotal API (v3), HTML5-QRCode
 
