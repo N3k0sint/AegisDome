@@ -1,0 +1,54 @@
+# AegisDome
+
+**AegisDome** is an advanced Threat Intelligence Scanner and Secure Dashboard built to protect users from modern cyber threats, including zero-day phishing, malware, and sophisticated exploits. 
+
+Powered by the global intelligence network of VirusTotal (aggregating over 90+ security vendors), AegisDome provides real-time, actionable insights on suspicious targets.
+
+## Core Features
+
+- **Threat Intelligence Scanner:** Enter any URL, domain, IP address, file hash, or upload binary files to receive a detailed, real-time breakdown of security posture across 90+ independent vendors.
+- **Secure QR Scanner:** Built-in web camera function and image upload that parses physical QR codes, instantly extracts the hidden destination link, and processes it through the threat network.
+- **Scam Radar:** Paste entire suspicious emails or raw text logs. AegisDome will automatically parse, extract, and deduplicate all hidden URLs, IPs, and hashes for 1-click scanning.
+- **Intelligent Redirects & Warning Modals:** Clean URLs immediately redirect, while malicious URLs are hard-blocked by an un-bypassable warning modal showing exact threat intel.
+- **Local SQLite Caching:** Implements a 24-hour persistent database layer (`better-sqlite3`) to instantly load previously scanned items without burning VirusTotal API credits.
+- **Native PDF Reports:** Fully responsive, single-page UI architecture hooks directly into the browser's native print engine to generate fully selectable, un-clipped PDF threat reports.
+
+## Tech Stack
+
+- **Frontend:** Next.js 15 (React), Tailwind CSS v4, Lucide Icons
+- **Backend:** Next.js API Routes (Serverless)
+- **Integrations:** VirusTotal API (v3), HTML5-QRCode
+
+## 🚀 How to Share & Run on Any Device
+
+Because AegisDome is an advanced Full-Stack application (it has a Node.js backend and a SQLite database), it cannot be compiled directly into a simple `.exe` or mobile `.apk`. However, you can easily share it using the standard methods below!
+
+### Option 1: For Windows Desktop (Local Run)
+If you want to share the code with a friend who has a Windows PC, they can run it locally with one click:
+1. Ensure they have [Node.js](https://nodejs.org) installed on their computer.
+2. Send them this project folder.
+3. Tell them to double-click the **`start-aegisdome.bat`** file.
+4. The script will automatically install all requirements, start the secure backend server, and open AegisDome in their browser!
+
+### Option 2: For Mobile Phones (The Best Method)
+To use AegisDome on an iPhone or Android, you must deploy the "Brain" (the backend server) to the internet so your phone can connect to it. We recommend using **Vercel** (it is 100% free).
+
+1. Upload this entire code repository to your GitHub account.
+2. Go to [Vercel.com](https://vercel.com) and log in with GitHub.
+3. Click **Add New Project**, select your AegisDome repository, and click **Deploy**.
+4. In the Vercel project settings, add your `VIRUSTOTAL_API_KEY` to the Environment Variables.
+5. Vercel will give you a live URL (e.g., `https://aegisdome.vercel.app`).
+
+**Installing the Mobile App:**
+Now that it is on the internet, your friends can install it like a real app!
+1. Open the Vercel URL on Safari (iPhone) or Chrome (Android).
+2. Tap the Share button (iOS) or Menu button (Android).
+3. Select **"Add to Home Screen"**.
+4. AegisDome will be installed on their phone as a full-screen **Progressive Web App (PWA)**!
+
+> **Note on Free Deployments:** Because free cloud services are "serverless", the local SQLite database cache will occasionally reset. This is perfectly normal and does not break the app; it just means it will fetch fresh data from VirusTotal.
+
+## Future Roadmap
+
+- **Malware Sandbox Integration:** Future support for hooking into Cuckoo Sandbox or ANY.RUN for dynamic behavioral analysis of uploaded binaries.
+- **Team Workspaces:** User authentication and RBAC to share scan history across SOC teams.
