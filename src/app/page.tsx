@@ -182,9 +182,22 @@ export default function Home() {
     setExtractedIocs(uniqueIocs);
   }
 
-  const downloadPdf = () => {
-    // Rely on native browser printing engine instead of html2pdf for perfect fidelity
-    window.print();
+  const downloadPdf = async () => {
+    const element = document.getElementById('report-content');
+    if (!element) return;
+
+    // Dynamically import html2pdf to prevent Next.js Server-Side Rendering (SSR) crashes
+    const html2pdf = (await import('html2pdf.js')).default;
+
+    const opt = {
+      margin:       10,
+      filename:     `AegisDome_Report.pdf`,
+      image:        { type: 'jpeg', quality: 0.98 },
+      html2canvas:  { scale: 2, useCORS: true, backgroundColor: '#0f172a' }, // Force dark background for canvas so white text is visible
+      jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+
+    html2pdf().set(opt).from(element).save();
   };
 
   const handleRedirectClick = () => {
@@ -396,7 +409,7 @@ export default function Home() {
         </div>
 
         {/* Right Column - Results Area */}
-        <div className="flex-1 w-full print:w-full overflow-visible" id="report-content">
+        <div className="flex-1 w-full print:w-full overflow-visible bg-[var(--background)] text-[var(--foreground)]" id="report-content">
           {/* Changed glass-panel to remove bounded height so it expands naturally */}
           <div className="glass-panel print:border-none print:shadow-none print:bg-transparent rounded-xl flex flex-col transition-all duration-300">
             <div className="p-4 sm:p-6 border-b border-[var(--card-border)] print:hidden flex items-center justify-between">
