@@ -189,7 +189,7 @@ export default function Home() {
     // Dynamically import html2pdf to prevent Next.js Server-Side Rendering (SSR) crashes
     const html2pdf = (await import('html2pdf.js')).default;
 
-    const opt = {
+    const opt: any = {
       margin:       10,
       filename:     `AegisDome_Report.pdf`,
       image:        { type: 'jpeg', quality: 0.98 },
