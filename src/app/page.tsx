@@ -187,14 +187,16 @@ export default function Home() {
       if (!result) return;
 
       // Dynamically import pdfmake (generates true vector PDFs from data instead of taking screenshots)
-      const pdfMakeModule = await import('pdfmake/build/pdfmake');
-      const pdfFontsModule = await import('pdfmake/build/vfs_fonts');
+      // @ts-ignore
+      const pdfMakeModule = await import('pdfmake/build/pdfmake.js');
+      // @ts-ignore
+      const pdfFontsModule = await import('pdfmake/build/vfs_fonts.js');
       
       const pdfMake = pdfMakeModule.default || pdfMakeModule;
       const pdfFonts = pdfFontsModule.default || pdfFontsModule;
       
       // Initialize fonts
-      pdfMake.vfs = pdfFonts.pdfMake ? pdfFonts.pdfMake.vfs : pdfFonts.vfs;
+      (pdfMake as any).vfs = (pdfFonts as any).pdfMake ? (pdfFonts as any).pdfMake.vfs : (pdfFonts as any).vfs;
 
       const vendorsArray = result.vendors ? Object.entries(result.vendors) : [];
       
