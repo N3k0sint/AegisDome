@@ -32,11 +32,11 @@ export function formatVtResponse(vtData: any) {
       ? 'This target has been flagged by multiple threat intelligence engines.' 
       : 'No threats detected. The target appears clean based on current global threat intelligence feeds.';
 
-    return NextResponse.json({
+    return {
       status,
       message,
       stats: { malicious: maliciousCount, total: totalCount },
       vendors: vendors,
       details: details
-    });
+    };
 }

@@ -43,7 +43,7 @@ export async function POST(req: Request) {
         const fileData = await checkRes.json();
         const formatted = formatVtResponse(fileData.data);
         setCachedResult(hash, formatted); // Save to cache!
-        return formatted;
+        return NextResponse.json(formatted);
     }
 
     // Step 3: If not found, upload it

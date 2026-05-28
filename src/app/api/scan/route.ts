@@ -41,7 +41,7 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: fileData.error.message }, { status: 400 });
       }
       
-      return formatVtResponse(fileData.data);
+      return NextResponse.json(formatVtResponse(fileData.data));
     } 
     
     // URL / QR flow
