@@ -10,6 +10,12 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Missing analysis ID' }, { status: 400 });
     }
 
+    // SSRF Prevention: Validate that analysisId only contains safe characters (alphanumeric, -, _, =, :)
+    // This prevents path traversal or URL manipulation attacks flagged by CodeQL.
+    if (!/^[A-Za-z0-9\-\_\=\:]+$/.test(analysisId)) {
+      return NextResponse.json({ error: 'Invalid analysis ID format' }, { status: 400 });
+    }
+
     const apiKey = process.env.VIRUSTOTAL_API_KEY;
     if (!apiKey) {
       return NextResponse.json({ error: 'VirusTotal API key is not configured' }, { status: 500 });
@@ -44,7 +50,12 @@ export async function POST(req: Request) {
     
     if (!itemUrl) {
         // Fallback to analysis data if no item link is provided (rare)
-        return formatVtResponse(analysisData.data);
+        return NextResponse.json(formatVtResponse(analysisData.data));
+    }
+
+    // SSRF Prevention: Ensure the URL provided by the API actually points to VirusTotal
+    if (!itemUrl.startsWith('https://www.virustotal.com/api/v3/')) {
+        return NextResponse.json({ error: 'Invalid item URL from upstream' }, { status: 502 });
     }
 
     const itemRes = await fetch(itemUrl, getOptions);
@@ -62,7 +73,7 @@ export async function POST(req: Request) {
         setCachedResult(targetId, formattedResponse);
     }
     
-    return formattedResponse;
+    return NextResponse.json(formattedResponse);
 
   } catch (error) {
     console.error(error);
