@@ -156,6 +156,7 @@ export default function Home() {
         } else {
           setResult({ 
             status: "malicious", 
+            message: "QR Decode Failed",
             error: "Could not decode a valid QR code from this image. Ensure the code is clear and visible." 
           });
         }
