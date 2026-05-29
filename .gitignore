@@ -45,3 +45,6 @@ next-env.d.ts
 aegisdome_cache.db
 aegisdome_cache.db-journal
 aegisdome_cache.db-wal
+
+# Nativefier desktop builds
+/AegisDome-*/

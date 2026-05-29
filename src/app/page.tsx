@@ -5,6 +5,14 @@ import { Shield, ScanLine, Link as LinkIcon, AlertTriangle, CheckCircle, Search,
 import { Html5QrcodeScanner, Html5QrcodeScanType } from "html5-qrcode";
 import { useTheme } from "next-themes";
 
+const formatMalaysianTime = (date: Date) => {
+  return date.toLocaleString('en-MY', {
+    timeZone: 'Asia/Kuala_Lumpur',
+    dateStyle: 'medium',
+    timeStyle: 'medium'
+  }) + ' (MYT)';
+};
+
 export default function Home() {
   const [url, setUrl] = useState("");
   const [scamText, setScamText] = useState("");
@@ -204,7 +212,7 @@ export default function Home() {
       doc.setFont('Helvetica', 'normal');
       doc.setFontSize(9);
       doc.setTextColor('#64748b'); // slate-500
-      doc.text(`Generated: ${new Date().toUTCString()}`, 14, 26);
+      doc.text(`Generated: ${formatMalaysianTime(new Date())}`, 14, 26);
       
       doc.setDrawColor('#cbd5e1'); // slate-300
       doc.line(14, 29, 196, 29);
@@ -277,10 +285,10 @@ export default function Home() {
          doc.setTextColor('#334155');
          
          const historyList = [];
-         if (result.details.first_seen_itw_date) historyList.push(`First Seen In The Wild: ${new Date(result.details.first_seen_itw_date * 1000).toUTCString()}`);
-         if (result.details.first_submission_date) historyList.push(`First Submission: ${new Date(result.details.first_submission_date * 1000).toUTCString()}`);
-         if (result.details.last_submission_date) historyList.push(`Last Submission: ${new Date(result.details.last_submission_date * 1000).toUTCString()}`);
-         if (result.details.last_analysis_date) historyList.push(`Last Analysis: ${new Date(result.details.last_analysis_date * 1000).toUTCString()}`);
+         if (result.details.first_seen_itw_date) historyList.push(`First Seen In The Wild: ${formatMalaysianTime(new Date(result.details.first_seen_itw_date * 1000))}`);
+         if (result.details.first_submission_date) historyList.push(`First Submission: ${formatMalaysianTime(new Date(result.details.first_submission_date * 1000))}`);
+         if (result.details.last_submission_date) historyList.push(`Last Submission: ${formatMalaysianTime(new Date(result.details.last_submission_date * 1000))}`);
+         if (result.details.last_analysis_date) historyList.push(`Last Analysis: ${formatMalaysianTime(new Date(result.details.last_analysis_date * 1000))}`);
          
          historyList.forEach(line => {
             doc.text(line, 14, currentY);
@@ -465,7 +473,7 @@ export default function Home() {
              <h1 className="text-3xl font-bold text-black flex items-center gap-2">
                 <Shield className="w-8 h-8" /> AegisDome Intelligence Report
              </h1>
-             <p className="text-gray-600 text-sm mt-2 font-mono">Generated: {new Date().toUTCString()}</p>
+             <p className="text-gray-600 text-sm mt-2 font-mono">Generated: {formatMalaysianTime(new Date())}</p>
            </div>
            {result?.status && result.status !== 'queued' && (
              <div className="text-right">
@@ -737,10 +745,10 @@ export default function Home() {
                                <Clock className="w-5 h-5 print:hidden"/> History
                              </h4>
                              <div className="bg-[var(--card-bg)] print:bg-transparent border border-[var(--card-border)] print:border-none rounded-lg divide-y divide-[var(--card-border)] print:divide-gray-200 text-sm">
-                               {result.details.first_seen_itw_date && <div className="p-3 print:p-1 flex flex-col sm:flex-row gap-2"><span className="text-[var(--text-muted)] print:text-gray-600 font-medium w-48 shrink-0">First Seen In The Wild</span><span className="print:text-black">{new Date(result.details.first_seen_itw_date * 1000).toUTCString()}</span></div>}
-                               {result.details.first_submission_date && <div className="p-3 print:p-1 flex flex-col sm:flex-row gap-2"><span className="text-[var(--text-muted)] print:text-gray-600 font-medium w-48 shrink-0">First Submission</span><span className="print:text-black">{new Date(result.details.first_submission_date * 1000).toUTCString()}</span></div>}
-                               {result.details.last_submission_date && <div className="p-3 print:p-1 flex flex-col sm:flex-row gap-2"><span className="text-[var(--text-muted)] print:text-gray-600 font-medium w-48 shrink-0">Last Submission</span><span className="print:text-black">{new Date(result.details.last_submission_date * 1000).toUTCString()}</span></div>}
-                               {result.details.last_analysis_date && <div className="p-3 print:p-1 flex flex-col sm:flex-row gap-2"><span className="text-[var(--text-muted)] print:text-gray-600 font-medium w-48 shrink-0">Last Analysis</span><span className="print:text-black">{new Date(result.details.last_analysis_date * 1000).toUTCString()}</span></div>}
+                               {result.details.first_seen_itw_date && <div className="p-3 print:p-1 flex flex-col sm:flex-row gap-2"><span className="text-[var(--text-muted)] print:text-gray-600 font-medium w-48 shrink-0">First Seen In The Wild</span><span className="print:text-black">{formatMalaysianTime(new Date(result.details.first_seen_itw_date * 1000))}</span></div>}
+                               {result.details.first_submission_date && <div className="p-3 print:p-1 flex flex-col sm:flex-row gap-2"><span className="text-[var(--text-muted)] print:text-gray-600 font-medium w-48 shrink-0">First Submission</span><span className="print:text-black">{formatMalaysianTime(new Date(result.details.first_submission_date * 1000))}</span></div>}
+                               {result.details.last_submission_date && <div className="p-3 print:p-1 flex flex-col sm:flex-row gap-2"><span className="text-[var(--text-muted)] print:text-gray-600 font-medium w-48 shrink-0">Last Submission</span><span className="print:text-black">{formatMalaysianTime(new Date(result.details.last_submission_date * 1000))}</span></div>}
+                               {result.details.last_analysis_date && <div className="p-3 print:p-1 flex flex-col sm:flex-row gap-2"><span className="text-[var(--text-muted)] print:text-gray-600 font-medium w-48 shrink-0">Last Analysis</span><span className="print:text-black">{formatMalaysianTime(new Date(result.details.last_analysis_date * 1000))}</span></div>}
                              </div>
                           </div>
 
