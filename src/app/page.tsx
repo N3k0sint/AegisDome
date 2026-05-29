@@ -846,23 +846,23 @@ export default function Home() {
         {/* Warning Modal Overlay */}
         {showRedirectModal && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 print:hidden">
-            <div className="bg-[var(--card-bg)] border border-danger-500/50 rounded-xl shadow-2xl max-w-md w-full overflow-hidden animate-in zoom-in-95">
-              <div className="bg-danger-500 text-white p-6 text-center">
-                <AlertTriangle className="w-16 h-16 mx-auto mb-4" />
-                <h2 className="text-2xl font-bold">SECURITY WARNING</h2>
+            <div className="bg-[var(--card-bg)] border border-danger-500/50 rounded-xl shadow-2xl max-w-md w-full max-h-[85vh] flex flex-col overflow-hidden animate-in zoom-in-95">
+              <div className="bg-danger-500 text-white py-4 px-6 text-center shrink-0">
+                <AlertTriangle className="w-12 h-12 mx-auto mb-2" />
+                <h2 className="text-xl font-bold">SECURITY WARNING</h2>
               </div>
-              <div className="p-6">
-                <p className="font-semibold text-lg mb-2">Proceed with Extreme Caution!</p>
+              <div className="p-5 overflow-y-auto flex-1">
+                <p className="font-semibold text-base mb-2">Proceed with Extreme Caution!</p>
                 <p className="text-[var(--text-muted)] text-sm mb-4">
                   The link you are trying to visit has been flagged as <strong>malicious</strong> by {result?.stats?.malicious} security vendors. Visiting this site could expose you to malware, phishing, or other cyber threats.
                 </p>
-                <div className="bg-black/20 p-3 rounded-lg border border-[var(--card-border)] mb-6">
+                <div className="bg-black/20 p-3 rounded-lg border border-[var(--card-border)] mb-5">
                   <p className="font-mono text-xs text-danger-500 break-all">{url}</p>
                 </div>
-                <div className="flex flex-col gap-3">
+                <div className="flex flex-col gap-2.5">
                   <button 
                     onClick={() => setShowRedirectModal(false)}
-                    className="w-full bg-[var(--input-bg)] border border-[var(--card-border)] hover:bg-[var(--card-border)] text-foreground font-semibold py-3 rounded-lg transition-colors"
+                    className="w-full bg-[var(--input-bg)] border border-[var(--card-border)] hover:bg-[var(--card-border)] text-foreground font-semibold py-2.5 rounded-lg transition-colors cursor-pointer"
                   >
                     Go Back to Safety
                   </button>
@@ -872,7 +872,7 @@ export default function Home() {
                       window.open(finalUrl, '_blank');
                       setShowRedirectModal(false);
                     }}
-                    className="w-full text-danger-500 hover:text-danger-400 font-semibold py-2 transition-colors text-sm underline"
+                    className="w-full text-danger-500 hover:text-danger-400 font-semibold py-1.5 transition-colors text-sm underline cursor-pointer"
                   >
                     I understand the risks, proceed anyway
                   </button>
@@ -885,23 +885,23 @@ export default function Home() {
         {/* Upload Confirmation Modal Overlay */}
         {showUploadConfirmModal && pendingUploadFile && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 print:hidden">
-            <div className="bg-[var(--card-bg)] border border-yellow-500/50 rounded-xl shadow-2xl max-w-md w-full overflow-hidden animate-in zoom-in-95">
-              <div className="bg-yellow-500 text-slate-900 p-6 text-center">
-                <UploadCloud className="w-16 h-16 mx-auto mb-4 animate-bounce" />
-                <h2 className="text-2xl font-bold">UPLOAD CONFIRMATION</h2>
+            <div className="bg-[var(--card-bg)] border border-yellow-500/50 rounded-xl shadow-2xl max-w-md w-full max-h-[85vh] flex flex-col overflow-hidden animate-in zoom-in-95">
+              <div className="bg-yellow-500 text-slate-900 py-4 px-6 text-center shrink-0">
+                <UploadCloud className="w-12 h-12 mx-auto mb-2 animate-bounce" />
+                <h2 className="text-xl font-bold">UPLOAD CONFIRMATION</h2>
               </div>
-              <div className="p-6">
-                <p className="font-semibold text-lg mb-2">Unrecognized File Hash</p>
+              <div className="p-5 overflow-y-auto flex-1">
+                <p className="font-semibold text-base mb-2">Unrecognized File Hash</p>
                 <p className="text-[var(--text-muted)] text-sm mb-4">
                   This file hash is unknown to VirusTotal. To scan it, the actual file must be uploaded.
                 </p>
                 
-                <div className="bg-amber-500/10 border border-amber-500/30 p-3 rounded-lg text-amber-600 dark:text-amber-400 text-xs mb-6">
+                <div className="bg-amber-500/10 border border-amber-500/30 p-3 rounded-lg text-amber-600 dark:text-amber-400 text-xs mb-5">
                   <p className="font-semibold mb-1">⚠️ Warning:</p>
                   Uploaded files are shared with the public security community. Do not upload private or sensitive data.
                 </div>
 
-                <div className="bg-black/20 p-3 rounded-lg border border-[var(--card-border)] mb-6 text-sm">
+                <div className="bg-black/20 p-3 rounded-lg border border-[var(--card-border)] mb-5 text-sm">
                   <div className="flex justify-between mb-1">
                     <span className="font-medium text-[var(--text-muted)]">File Name:</span>
                     <span className="break-all font-mono text-right max-w-[200px]">{pendingUploadFile.name}</span>
@@ -912,14 +912,14 @@ export default function Home() {
                   </div>
                 </div>
 
-                <div className="flex flex-col gap-3">
+                <div className="flex flex-col gap-2.5">
                   <button 
                     onClick={() => {
                       scanFile(pendingUploadFile, true);
                       setShowUploadConfirmModal(false);
                       setPendingUploadFile(null);
                     }}
-                    className="w-full bg-yellow-500 hover:bg-yellow-600 text-slate-900 font-semibold py-3 rounded-lg transition-colors cursor-pointer"
+                    className="w-full bg-yellow-500 hover:bg-yellow-600 text-slate-900 font-semibold py-2.5 rounded-lg transition-colors cursor-pointer"
                   >
                     Confirm & Upload
                   </button>
@@ -928,7 +928,7 @@ export default function Home() {
                       setShowUploadConfirmModal(false);
                       setPendingUploadFile(null);
                     }}
-                    className="w-full bg-[var(--input-bg)] border border-[var(--card-border)] hover:bg-[var(--card-border)] text-foreground font-semibold py-3 rounded-lg transition-colors cursor-pointer"
+                    className="w-full bg-[var(--input-bg)] border border-[var(--card-border)] hover:bg-[var(--card-border)] text-foreground font-semibold py-2.5 rounded-lg transition-colors cursor-pointer"
                   >
                     Cancel Scan
                   </button>
