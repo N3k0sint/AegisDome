@@ -1,9 +1,16 @@
 import { NextResponse } from 'next/server';
 import { formatVtResponse } from '../../utils';
 import { setCachedResult } from '../../cache';
+import { isRateLimited } from '../../ratelimit';
 
 export async function POST(req: Request) {
   try {
+    // Rate Limiting Check
+    const ip = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || '127.0.0.1';
+    if (await isRateLimited(ip)) {
+      return NextResponse.json({ error: 'Too many requests. Please try again later.' }, { status: 429 });
+    }
+
     const { analysisId, targetId } = await req.json();
 
     if (!analysisId) {
@@ -70,7 +77,7 @@ export async function POST(req: Request) {
     
     // Save to Cache if targetId was passed!
     if (targetId) {
-        setCachedResult(targetId, formattedResponse);
+        await setCachedResult(targetId, formattedResponse);
     }
     
     return NextResponse.json(formattedResponse);

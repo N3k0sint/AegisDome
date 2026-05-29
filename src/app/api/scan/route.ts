@@ -1,11 +1,18 @@
 import { NextResponse } from 'next/server';
 import { formatVtResponse } from '../utils';
 import { getCachedResult } from '../cache';
+import { isRateLimited } from '../ratelimit';
 
 const HASH_REGEX = /^[a-fA-F0-9]{32,64}$/;
 
 export async function POST(req: Request) {
   try {
+    // 1. Rate Limiting Check
+    const ip = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || '127.0.0.1';
+    if (await isRateLimited(ip)) {
+      return NextResponse.json({ error: 'Too many requests. Please try again later.' }, { status: 429 });
+    }
+
     const body = await req.json();
     const { type, payload } = body;
 
@@ -14,7 +21,7 @@ export async function POST(req: Request) {
     }
 
     // Check Local Cache First (Lightning fast, saves API limits)
-    const cachedData = getCachedResult(payload);
+    const cachedData = await getCachedResult(payload);
     if (cachedData) {
         return NextResponse.json(cachedData);
     }

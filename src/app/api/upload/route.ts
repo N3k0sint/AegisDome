@@ -2,9 +2,16 @@ import { NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { formatVtResponse } from '../utils';
 import { getCachedResult, setCachedResult } from '../cache';
+import { isRateLimited } from '../ratelimit';
 
 export async function POST(req: Request) {
   try {
+    // Rate Limiting Check
+    const ip = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || '127.0.0.1';
+    if (await isRateLimited(ip)) {
+      return NextResponse.json({ error: 'Too many requests. Please try again later.' }, { status: 429 });
+    }
+
     const apiKey = process.env.VIRUSTOTAL_API_KEY;
     if (!apiKey) {
       return NextResponse.json({ error: 'VirusTotal API key is not configured' }, { status: 500 });
@@ -27,7 +34,7 @@ export async function POST(req: Request) {
     const hash = crypto.createHash('sha256').update(buffer).digest('hex');
 
     // Step 2: Check Local Cache First
-    const cachedData = getCachedResult(hash);
+    const cachedData = await getCachedResult(hash);
     if (cachedData) {
         return NextResponse.json(cachedData);
     }
@@ -42,7 +49,7 @@ export async function POST(req: Request) {
     if (checkRes.ok) {
         const fileData = await checkRes.json();
         const formatted = formatVtResponse(fileData.data);
-        setCachedResult(hash, formatted); // Save to cache!
+        await setCachedResult(hash, formatted); // Save to cache!
         return NextResponse.json(formatted);
     }
 

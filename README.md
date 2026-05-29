@@ -10,7 +10,8 @@ Powered by the global intelligence network of VirusTotal (aggregating over 90+ s
 - **Secure QR Scanner:** Built-in web camera function and image upload that parses physical QR codes, instantly extracts the hidden destination link, and processes it through the threat network.
 - **Scam Radar:** Paste entire suspicious emails or raw text logs. AegisDome will automatically parse, extract, and deduplicate all hidden URLs, IPs, and hashes for 1-click scanning.
 - **Intelligent Redirects & Warning Modals:** Clean URLs immediately redirect, while malicious URLs are hard-blocked by an un-bypassable warning modal showing exact threat intel.
-- **Local SQLite Caching:** Implements a 24-hour persistent database layer (`better-sqlite3`) to instantly load previously scanned items without burning VirusTotal API credits.
+- **Dual-Layer Hybrid Caching:** Automatically utilizes cloud-hosted **Upstash Redis** when deployed (avoiding serverless database wiping issues) and falls back to a local **SQLite database** (`better-sqlite3`) when running on your local machine.
+- **Adaptive IP Rate Limiting:** Built-in security that limits clients to **15 requests/min** via Redis sliding window in production (and **30 requests/min** in memory locally) to prevent API exploitation.
 - **High-Fidelity PDF Reports:** Generates vector-based PDF reports directly on any desktop or mobile device using `jsPDF` and `jspdf-autotable`. All content and tables are perfectly structured, automatically paginated, and fully copy-pasteable.
 
 ## Tech Stack
@@ -35,7 +36,10 @@ To use AegisDome on an iPhone or Android, you must deploy the "Brain" (the backe
 1. Upload this entire code repository to your GitHub account.
 2. Go to [Vercel.com](https://vercel.com) and log in with GitHub.
 3. Click **Add New Project**, select your AegisDome repository, and click **Deploy**.
-4. In the Vercel project settings, add your `VIRUSTOTAL_API_KEY` to the Environment Variables.
+4. In the Vercel project settings, add the following Environment Variables:
+   - `VIRUSTOTAL_API_KEY`: *(your VirusTotal API key)*
+   - `UPSTASH_REDIS_REST_URL`: *(your Upstash Redis Rest URL)*
+   - `UPSTASH_REDIS_REST_TOKEN`: *(your Upstash Redis Rest Token)*
 5. Vercel will give you a live URL (e.g., `https://aegisdome.vercel.app`).
 
 **Installing the Mobile App:**
@@ -84,7 +88,7 @@ To generate a native Android installer file that users can tap to install:
    In Android Studio, click **Build > Build Bundle(s) / APK(s) > Build APK(s)**. 
    *Send the compiled `.apk` file directly to any Android device to install it!*
 
-> **Note on Free Deployments:** Because free cloud services are "serverless", the local SQLite database cache will occasionally reset. This is perfectly normal and does not break the app; it just means it will fetch fresh data from VirusTotal.
+> **Note on Cloud Caching:** When deployed to Vercel, the app automatically connects to your Upstash Redis database to keep cached scans completely persistent. If you run the app locally, it bypasses Redis and writes to a local SQLite cache file (`aegisdome_cache.db`) instead, requiring zero configuration.
 
 ## Future Roadmap
 
