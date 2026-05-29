@@ -264,12 +264,20 @@ export default function Home() {
       currentY += 6;
       doc.setFont('Helvetica', 'bold');
       doc.text('Status:', 14, currentY);
+      
+      const isTyposquat = (result as any)?.typosquatting?.detected;
       if (result.status === 'safe') {
-         doc.setTextColor('#22c55e'); // green-500
+        if (isTyposquat) {
+          doc.setTextColor('#ca8a04'); // yellow-600
+          doc.text('SUSPICIOUS', 35, currentY);
+        } else {
+          doc.setTextColor('#22c55e'); // green-500
+          doc.text('SAFE', 35, currentY);
+        }
       } else {
-         doc.setTextColor('#ef4444'); // red-500
+        doc.setTextColor('#ef4444'); // red-500
+        doc.text(result.status.toUpperCase(), 35, currentY);
       }
-      doc.text(result.status.toUpperCase(), 35, currentY);
       
       currentY += 6;
       doc.setFont('Helvetica', 'bold');
@@ -279,6 +287,25 @@ export default function Home() {
       doc.text(`${result.stats?.malicious || 0} / ${result.stats?.total || 0} detections`, 35, currentY);
       
       currentY += 12;
+
+      if (isTyposquat) {
+        // Draw a warning box
+        doc.setFillColor('#fef9c3'); // yellow-100 background
+        doc.setDrawColor('#fde047'); // yellow-300 border
+        doc.rect(14, currentY, 182, 18, 'FD'); // filled and stroke rectangle
+        
+        doc.setFont('Helvetica', 'bold');
+        doc.setFontSize(10);
+        doc.setTextColor('#ca8a04'); // yellow-600
+        doc.text(`TYPOSQUATTING MATCH (${(result as any).typosquatting.similarity}% Match)`, 18, currentY + 6);
+        
+        doc.setFont('Helvetica', 'normal');
+        doc.setFontSize(8.5);
+        doc.setTextColor('#71717a'); // gray-500
+        doc.text(`Mimics the official brand ${(result as any).typosquatting.brandName} on an unofficial server. Potential phishing attempt.`, 18, currentY + 12);
+        
+        currentY += 26;
+      }
       
       // Basic Properties
       if (result.details) {
@@ -429,7 +456,8 @@ export default function Home() {
     
     const finalUrl = url.startsWith('http') ? url : `http://${url}`;
     
-    if (result?.status === 'safe') {
+    const isTyposquat = (result as any)?.typosquatting?.detected;
+    if (result?.status === 'safe' && !isTyposquat) {
       window.open(finalUrl, '_blank');
     } else {
       setShowRedirectModal(true);
@@ -746,7 +774,7 @@ export default function Home() {
                             <span className="bg-yellow-500 text-slate-900 text-[10px] font-extrabold px-1.5 py-0.5 rounded-full">{(result as any).typosquatting.similarity}% Match</span>
                           </h4>
                           <p className="text-xs text-[var(--text-muted)] mt-1 leading-relaxed">
-                            This URL contains the label <strong className="font-mono text-yellow-600 dark:text-yellow-400">{(result as any).typosquatting.matchedPart}</strong> which closely mimics the protected brand <strong className="underline font-semibold">{(result as any).typosquatting.brandName}</strong>, but is hosted on an unofficial server. This is highly likely to be a credential-stealing phishing attempt.
+                            Mimics the official brand <strong className="underline font-semibold">{(result as any).typosquatting.brandName}</strong> on an unofficial server. Potential phishing attempt.
                           </p>
                         </div>
                       </div>
@@ -896,41 +924,59 @@ export default function Home() {
 
         {/* Warning Modal Overlay */}
         {showRedirectModal && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 print:hidden">
-            <div className="bg-[var(--card-bg)] border border-danger-500/50 rounded-xl shadow-2xl max-w-md w-full max-h-[85vh] flex flex-col overflow-hidden animate-in zoom-in-95">
-              <div className="bg-danger-500 text-white py-4 px-6 text-center shrink-0">
-                <AlertTriangle className="w-12 h-12 mx-auto mb-2" />
-                <h2 className="text-xl font-bold">SECURITY WARNING</h2>
-              </div>
-              <div className="p-5 overflow-y-auto flex-1">
-                <p className="font-semibold text-base mb-2">Proceed with Extreme Caution!</p>
-                <p className="text-[var(--text-muted)] text-sm mb-4">
-                  The link you are trying to visit has been flagged as <strong>malicious</strong> by {result?.stats?.malicious} security vendors. Visiting this site could expose you to malware, phishing, or other cyber threats.
-                </p>
-                <div className="bg-black/20 p-3 rounded-lg border border-[var(--card-border)] mb-5">
-                  <p className="font-mono text-xs text-danger-500 break-all">{url}</p>
+          (() => {
+            const isTyposquat = (result as any)?.typosquatting?.detected;
+            const headerBg = isTyposquat ? 'bg-amber-500 text-slate-950' : 'bg-danger-500 text-white';
+            const borderColor = isTyposquat ? 'border-amber-500/50' : 'border-danger-500/50';
+            const urlColor = isTyposquat ? 'text-amber-500' : 'text-danger-500';
+            const proceedBtnColor = isTyposquat ? 'text-amber-500 hover:text-amber-400' : 'text-danger-500 hover:text-danger-400';
+            
+            return (
+              <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 print:hidden">
+                <div className={`bg-[var(--card-bg)] border ${borderColor} rounded-xl shadow-2xl max-w-md w-full max-h-[85vh] flex flex-col overflow-hidden animate-in zoom-in-95`}>
+                  <div className={`${headerBg} py-4 px-6 text-center shrink-0`}>
+                    <AlertTriangle className="w-12 h-12 mx-auto mb-2" />
+                    <h2 className="text-xl font-bold">{isTyposquat ? 'SUSPICIOUS LINK WARNING' : 'SECURITY WARNING'}</h2>
+                  </div>
+                  <div className="p-5 overflow-y-auto flex-1">
+                    <p className="font-semibold text-base mb-2">Proceed with Extreme Caution!</p>
+                    <p className="text-[var(--text-muted)] text-sm mb-4">
+                      {isTyposquat ? (
+                        <>
+                          The link you are trying to visit mimics the official brand <strong>{(result as any).typosquatting.brandName}</strong> but is hosted on an unofficial server. This is highly likely to be a credential-stealing phishing attempt.
+                        </>
+                      ) : (
+                        <>
+                          The link you are trying to visit has been flagged as <strong>malicious</strong> by {result?.stats?.malicious} security vendors. Visiting this site could expose you to malware, phishing, or other cyber threats.
+                        </>
+                      )}
+                    </p>
+                    <div className="bg-black/20 p-3 rounded-lg border border-[var(--card-border)] mb-5">
+                      <p className={`font-mono text-xs ${urlColor} break-all`}>{url}</p>
+                    </div>
+                    <div className="flex flex-col gap-2.5">
+                      <button 
+                        onClick={() => setShowRedirectModal(false)}
+                        className="w-full bg-[var(--input-bg)] border border-[var(--card-border)] hover:bg-[var(--card-border)] text-foreground font-semibold py-2.5 rounded-lg transition-colors cursor-pointer"
+                      >
+                        Go Back to Safety
+                      </button>
+                      <button 
+                        onClick={() => {
+                          const finalUrl = url.startsWith('http') ? url : `http://${url}`;
+                          window.open(finalUrl, '_blank');
+                          setShowRedirectModal(false);
+                        }}
+                        className={`w-full ${proceedBtnColor} font-semibold py-1.5 transition-colors text-sm underline cursor-pointer`}
+                      >
+                        I understand the risks, proceed anyway
+                      </button>
+                    </div>
+                  </div>
                 </div>
-                <div className="flex flex-col gap-2.5">
-                  <button 
-                    onClick={() => setShowRedirectModal(false)}
-                    className="w-full bg-[var(--input-bg)] border border-[var(--card-border)] hover:bg-[var(--card-border)] text-foreground font-semibold py-2.5 rounded-lg transition-colors cursor-pointer"
-                  >
-                    Go Back to Safety
-                  </button>
-                  <button 
-                    onClick={() => {
-                      const finalUrl = url.startsWith('http') ? url : `http://${url}`;
-                      window.open(finalUrl, '_blank');
-                      setShowRedirectModal(false);
-                    }}
-                    className="w-full text-danger-500 hover:text-danger-400 font-semibold py-1.5 transition-colors text-sm underline cursor-pointer"
-                  >
-                    I understand the risks, proceed anyway
-                  </button>
-                </div>
               </div>
-            </div>
-          </div>
+            );
+          })()
         )}
 
         {/* Upload Confirmation Modal Overlay */}
