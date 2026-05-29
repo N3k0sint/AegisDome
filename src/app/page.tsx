@@ -19,6 +19,8 @@ export default function Home() {
   const [extractedIocs, setExtractedIocs] = useState<{type: string, value: string}[]>([]);
   const [isScanning, setIsScanning] = useState(false);
   const [showRedirectModal, setShowRedirectModal] = useState(false);
+  const [showUploadConfirmModal, setShowUploadConfirmModal] = useState(false);
+  const [pendingUploadFile, setPendingUploadFile] = useState<File | null>(null);
   
   const [result, setResult] = useState<null | { 
     status: "safe" | "malicious" | "queued"; 
@@ -100,11 +102,43 @@ export default function Home() {
     }
   };
 
-  const scanFile = async (selectedFile: File) => {
+  // Helper to calculate file SHA-256 hash on client side
+  const calculateFileHash = async (selectedFile: File): Promise<string> => {
+    const arrayBuffer = await selectedFile.arrayBuffer();
+    const hashBuffer = await crypto.subtle.digest('SHA-256', arrayBuffer);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  };
+
+  const scanFile = async (selectedFile: File, skipHashCheck = false) => {
     setIsScanning(true);
     setResult(null);
 
     try {
+      if (!skipHashCheck) {
+        // Calculate hash and check if it's already analyzed
+        const hash = await calculateFileHash(selectedFile);
+        const hashCheckRes = await fetch("/api/scan", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ type: "hash", payload: hash })
+        });
+        
+        if (hashCheckRes.ok) {
+          const hashData = await hashCheckRes.json();
+          setResult(hashData);
+          setIsScanning(false);
+          return;
+        }
+        
+        // Hash not found in cache or VT database -> Prompt for full upload
+        setPendingUploadFile(selectedFile);
+        setShowUploadConfirmModal(true);
+        setIsScanning(false);
+        return;
+      }
+
+      // User confirmed upload or hash checking was skipped
       const formData = new FormData();
       formData.append("file", selectedFile);
 
@@ -841,6 +875,62 @@ export default function Home() {
                     className="w-full text-danger-500 hover:text-danger-400 font-semibold py-2 transition-colors text-sm underline"
                   >
                     I understand the risks, proceed anyway
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Upload Confirmation Modal Overlay */}
+        {showUploadConfirmModal && pendingUploadFile && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 print:hidden">
+            <div className="bg-[var(--card-bg)] border border-yellow-500/50 rounded-xl shadow-2xl max-w-md w-full overflow-hidden animate-in zoom-in-95">
+              <div className="bg-yellow-500 text-slate-900 p-6 text-center">
+                <UploadCloud className="w-16 h-16 mx-auto mb-4 animate-bounce" />
+                <h2 className="text-2xl font-bold">UPLOAD CONFIRMATION</h2>
+              </div>
+              <div className="p-6">
+                <p className="font-semibold text-lg mb-2">Unrecognized File Hash</p>
+                <p className="text-[var(--text-muted)] text-sm mb-4">
+                  This file hash has never been analyzed by VirusTotal. To receive a threat breakdown, the actual file binary must be uploaded.
+                </p>
+                
+                <div className="bg-amber-500/10 border border-amber-500/30 p-3 rounded-lg text-amber-600 dark:text-amber-400 text-xs mb-6">
+                  <p className="font-semibold mb-1">⚠️ Privacy Warning:</p>
+                  Uploading files to VirusTotal submits them to their public malware scanning network. Do NOT upload proprietary, sensitive, or personal data.
+                </div>
+
+                <div className="bg-black/20 p-3 rounded-lg border border-[var(--card-border)] mb-6 text-sm">
+                  <div className="flex justify-between mb-1">
+                    <span className="font-medium text-[var(--text-muted)]">File Name:</span>
+                    <span className="break-all font-mono text-right max-w-[200px]">{pendingUploadFile.name}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="font-medium text-[var(--text-muted)]">File Size:</span>
+                    <span>{(pendingUploadFile.size / 1024).toFixed(2)} KB</span>
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-3">
+                  <button 
+                    onClick={() => {
+                      scanFile(pendingUploadFile, true);
+                      setShowUploadConfirmModal(false);
+                      setPendingUploadFile(null);
+                    }}
+                    className="w-full bg-yellow-500 hover:bg-yellow-600 text-slate-900 font-semibold py-3 rounded-lg transition-colors cursor-pointer"
+                  >
+                    Confirm & Upload
+                  </button>
+                  <button 
+                    onClick={() => {
+                      setShowUploadConfirmModal(false);
+                      setPendingUploadFile(null);
+                    }}
+                    className="w-full bg-[var(--input-bg)] border border-[var(--card-border)] hover:bg-[var(--card-border)] text-foreground font-semibold py-3 rounded-lg transition-colors cursor-pointer"
+                  >
+                    Cancel Scan
                   </button>
                 </div>
               </div>
