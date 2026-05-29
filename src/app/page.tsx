@@ -511,9 +511,17 @@ export default function Home() {
            </div>
            {result?.status && result.status !== 'queued' && (
              <div className="text-right">
-               <h2 className={`text-2xl font-bold uppercase tracking-widest ${result.status === 'safe' ? 'text-green-700' : 'text-red-700'}`}>
-                 {result.status === 'safe' ? 'CLEAN' : 'MALICIOUS'}
-               </h2>
+               {(() => {
+                 const isTyposquat = (result as any)?.typosquatting?.detected;
+                 const isSafe = result.status === 'safe';
+                 const color = isSafe ? (isTyposquat ? 'text-yellow-600' : 'text-green-700') : 'text-red-700';
+                 const label = isSafe ? (isTyposquat ? 'SUSPICIOUS' : 'CLEAN') : 'MALICIOUS';
+                 return (
+                   <h2 className={`text-2xl font-bold uppercase tracking-widest ${color}`}>
+                     {label}
+                   </h2>
+                 );
+               })()}
                <p className="text-gray-600 text-sm font-semibold mt-1">Detection Score: {result.stats?.malicious} / {result.stats?.total}</p>
              </div>
            )}
@@ -672,24 +680,51 @@ export default function Home() {
                   {/* Results Header (Hidden on print because print has custom header) */}
                   <div className="p-6 pb-0 print:hidden">
                     <div className="flex items-center gap-4 pb-4">
-                      <div className={`w-14 h-14 rounded-full flex shrink-0 items-center justify-center ${
-                        result.status === 'safe' ? 'bg-safe-500/10 text-safe-600' : 
-                        result.status === 'queued' ? 'bg-yellow-500/10 text-yellow-600' : 'bg-danger-500/10 text-danger-600'
-                      }`}>
-                        {result.status === 'safe' ? <CheckCircle className="w-7 h-7" /> : 
-                         result.status === 'queued' ? <Activity className="w-7 h-7 animate-spin" /> : <AlertTriangle className="w-7 h-7" />}
-                      </div>
-                      <div className="overflow-hidden flex-1">
-                        <h3 className={`text-xl font-bold uppercase tracking-wide ${
-                          result.status === 'safe' ? 'text-safe-600' : 
-                          result.status === 'queued' ? 'text-yellow-600' : 'text-danger-600'
-                        }`}>
-                          {result.status === 'safe' ? 'Clean' : result.status === 'queued' ? 'Pending' : 'Malicious'}
-                        </h3>
-                        <p className="text-[var(--text-muted)] text-sm mt-1 truncate font-mono" title={result.details?.meaningful_name || url}>
-                          {result.status === 'queued' ? 'Analysis in progress' : (result.details?.meaningful_name || url || 'Target Analysis')}
-                        </p>
-                      </div>
+                      {(() => {
+                        const isTyposquat = (result as any)?.typosquatting?.detected;
+                        const isSafe = result.status === 'safe';
+                        const isQueued = result.status === 'queued';
+                        
+                        let bgColor = 'bg-danger-500/10 text-danger-600';
+                        let textColor = 'text-danger-600';
+                        let textLabel = 'Malicious';
+                        let icon = <AlertTriangle className="w-7 h-7" />;
+
+                        if (isQueued) {
+                          bgColor = 'bg-yellow-500/10 text-yellow-600';
+                          textColor = 'text-yellow-600';
+                          textLabel = 'Pending';
+                          icon = <Activity className="w-7 h-7 animate-spin" />;
+                        } else if (isSafe) {
+                          if (isTyposquat) {
+                            bgColor = 'bg-yellow-500/10 text-yellow-600 border border-yellow-500/30';
+                            textColor = 'text-yellow-600 dark:text-yellow-400';
+                            textLabel = 'Suspicious';
+                            icon = <AlertTriangle className="w-7 h-7 animate-pulse text-yellow-500" />;
+                          } else {
+                            bgColor = 'bg-safe-500/10 text-safe-600';
+                            textColor = 'text-safe-600';
+                            textLabel = 'Clean';
+                            icon = <CheckCircle className="w-7 h-7" />;
+                          }
+                        }
+
+                        return (
+                          <>
+                            <div className={`w-14 h-14 rounded-full flex shrink-0 items-center justify-center ${bgColor}`}>
+                              {icon}
+                            </div>
+                            <div className="overflow-hidden flex-1">
+                              <h3 className={`text-xl font-bold uppercase tracking-wide ${textColor}`}>
+                                {textLabel}
+                              </h3>
+                              <p className="text-[var(--text-muted)] text-sm mt-1 truncate font-mono" title={result.details?.meaningful_name || url}>
+                                {result.status === 'queued' ? 'Analysis in progress' : (result.details?.meaningful_name || url || 'Target Analysis')}
+                              </p>
+                            </div>
+                          </>
+                        );
+                      })()}
                       
                       {((url.startsWith('http') || url.includes('.')) && !url.includes(' ')) && result.status !== 'queued' && (
                         <button 
@@ -700,6 +735,22 @@ export default function Home() {
                         </button>
                       )}
                     </div>
+
+                    {/* Zero-Day Typosquatting Threat Warning Card */}
+                    {(result as any).typosquatting?.detected && (
+                      <div className="mb-4 bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4 flex items-start gap-3 text-yellow-600 dark:text-yellow-400 animate-in slide-in-from-top duration-300">
+                        <AlertTriangle className="w-5 h-5 shrink-0 mt-0.5 animate-pulse text-yellow-500" />
+                        <div>
+                          <h4 className="font-bold text-sm uppercase tracking-wider flex items-center gap-2">
+                            Typosquatting Match
+                            <span className="bg-yellow-500 text-slate-900 text-[10px] font-extrabold px-1.5 py-0.5 rounded-full">{(result as any).typosquatting.similarity}% Match</span>
+                          </h4>
+                          <p className="text-xs text-[var(--text-muted)] mt-1 leading-relaxed">
+                            This URL contains the label <strong className="font-mono text-yellow-600 dark:text-yellow-400">{(result as any).typosquatting.matchedPart}</strong> which closely mimics the protected brand <strong className="underline font-semibold">{(result as any).typosquatting.brandName}</strong>, but is hosted on an unofficial server. This is highly likely to be a credential-stealing phishing attempt.
+                          </p>
+                        </div>
+                      </div>
+                    )}
                     
                     {/* Tags */}
                     {result.details?.tags && result.details.tags.length > 0 && (

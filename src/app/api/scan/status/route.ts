@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { formatVtResponse } from '../../utils';
 import { setCachedResult } from '../../cache';
 import { isRateLimited } from '../../ratelimit';
+import { detectTyposquatting } from '../../typosquatting';
 
 export async function POST(req: Request) {
   try {
@@ -54,26 +55,35 @@ export async function POST(req: Request) {
     // 2. Analysis is completed! Fetch the full object (File or URL) to get rich details.
     // VT provides the link to the full object in `links.item`
     const itemUrl = analysisData.data.links?.item;
+    let formattedResponse: any;
     
     if (!itemUrl) {
-        // Fallback to analysis data if no item link is provided (rare)
-        return NextResponse.json(formatVtResponse(analysisData.data));
+        // Fallback to analysis data if no item link is provided (common for URL scans)
+        formattedResponse = formatVtResponse(analysisData.data);
+    } else {
+        // SSRF Prevention: Ensure the URL provided by the API actually points to VirusTotal
+        if (!itemUrl.startsWith('https://www.virustotal.com/api/v3/')) {
+            return NextResponse.json({ error: 'Invalid item URL from upstream' }, { status: 502 });
+        }
+
+        const itemRes = await fetch(itemUrl, getOptions);
+        const itemData = await itemRes.json();
+
+        if (itemData.error) {
+           return NextResponse.json({ error: itemData.error.message }, { status: 400 });
+        }
+
+        formattedResponse = formatVtResponse(itemData.data);
     }
 
-    // SSRF Prevention: Ensure the URL provided by the API actually points to VirusTotal
-    if (!itemUrl.startsWith('https://www.virustotal.com/api/v3/')) {
-        return NextResponse.json({ error: 'Invalid item URL from upstream' }, { status: 502 });
+    // Run Typosquatting Check for URL targets
+    const isHash = /^[a-fA-F0-9]{32,64}$/.test(targetId || '');
+    if (targetId && !isHash) {
+      const typosquatResult = detectTyposquatting(targetId);
+      if (typosquatResult.detected) {
+        formattedResponse.typosquatting = typosquatResult;
+      }
     }
-
-    const itemRes = await fetch(itemUrl, getOptions);
-    const itemData = await itemRes.json();
-
-    if (itemData.error) {
-       return NextResponse.json({ error: itemData.error.message }, { status: 400 });
-    }
-
-    // Return the deeply formatted full object response
-    const formattedResponse = formatVtResponse(itemData.data);
     
     // Save to Cache if targetId was passed!
     if (targetId) {

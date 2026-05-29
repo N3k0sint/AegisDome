@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { formatVtResponse } from '../utils';
 import { getCachedResult } from '../cache';
 import { isRateLimited } from '../ratelimit';
+import { detectTyposquatting } from '../typosquatting';
 
 const HASH_REGEX = /^[a-fA-F0-9]{32,64}$/;
 
@@ -20,9 +21,15 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Invalid input data' }, { status: 400 });
     }
 
+    // Run local typosquatting detection for URL and QR targets
+    const typosquatResult = (type === 'url' || type === 'qr') ? detectTyposquatting(payload) : { detected: false };
+
     // Check Local Cache First (Lightning fast, saves API limits)
     const cachedData = await getCachedResult(payload);
     if (cachedData) {
+        if (typosquatResult.detected) {
+            cachedData.typosquatting = typosquatResult;
+        }
         return NextResponse.json(cachedData);
     }
 
@@ -72,12 +79,18 @@ export async function POST(req: Request) {
        return NextResponse.json({ error: submitData.error.message }, { status: 400 });
     }
 
-    return NextResponse.json({
+    const queuedResponse: any = {
         status: 'queued',
         analysisId: submitData.data.id,
         targetId: payload, // Pass target back to frontend so it can be passed to status checker for caching
         message: 'Target submitted. Analysis is currently queued in VirusTotal.',
-    });
+    };
+
+    if (typosquatResult.detected) {
+        queuedResponse.typosquatting = typosquatResult;
+    }
+
+    return NextResponse.json(queuedResponse);
 
   } catch (error) {
     console.error(error);
