@@ -893,12 +893,12 @@ export default function Home() {
               <div className="p-6">
                 <p className="font-semibold text-lg mb-2">Unrecognized File Hash</p>
                 <p className="text-[var(--text-muted)] text-sm mb-4">
-                  This file hash has never been analyzed by VirusTotal. To receive a threat breakdown, the actual file binary must be uploaded.
+                  This file hash is unknown to VirusTotal. To scan it, the actual file must be uploaded.
                 </p>
                 
                 <div className="bg-amber-500/10 border border-amber-500/30 p-3 rounded-lg text-amber-600 dark:text-amber-400 text-xs mb-6">
-                  <p className="font-semibold mb-1">⚠️ Privacy Warning:</p>
-                  Uploading files to VirusTotal submits them to their public malware scanning network. Do NOT upload proprietary, sensitive, or personal data.
+                  <p className="font-semibold mb-1">⚠️ Warning:</p>
+                  Uploaded files are shared with the public security community. Do not upload private or sensitive data.
                 </div>
 
                 <div className="bg-black/20 p-3 rounded-lg border border-[var(--card-border)] mb-6 text-sm">
